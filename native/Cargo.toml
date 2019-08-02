@@ -1,0 +1,41 @@
+[package]
+name = "bridge"
+version = "0.1.0"
+authors = ["Josh Wilson <joshuef@gmail.com>"]
+license = "MIT"
+build = "build.rs"
+exclude = ["artifacts.json", "index.node"]
+
+[lib]
+name = "bridge"
+crate-type = ["dylib"]
+
+[build-dependencies]
+neon-build = "0.2.0"
+
+[dependencies]
+neon = "0.2.0"
+# num_cpus = "1.10.1"
+# to resolve conflicts
+prettytable-rs = "^0.8"
+
+safe_cli = { git = "https://github.com/maidsafe/safe-cli", branch = "master" }
+# safe-nd = { git = "https://github.com/maidsafe/safe-nd", branch = "stable" }
+
+[patch.crates-io]
+safe_app = { git = "https://github.com/maidsafe/safe_client_libs", branch = "stable" }
+safe_core = { git = "https://github.com/maidsafe/safe_client_libs", branch = "stable" }
+
+[features]
+mock-network = ["safe_cli/mock-network"]
+# fake-auth = ["safe_cli/testing"]
+scl-mock = ["safe_cli/fake-auth"]
+
+
+[dev-dependencies.safe_app]
+version = "0.9.1"
+features = ["mock-network", "testing"]
+
+# [dependencies.safe_client_libs]
+# version = "1.3.5"
+# features = ["mock-network"]
