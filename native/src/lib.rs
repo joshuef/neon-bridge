@@ -24,7 +24,7 @@ fn convert_vec_to_array(mut cx: FunctionContext, vec: Vec<u8>) -> JsResult<JsArr
     Ok(js_array)
 }
 
-fn thread_count(mut cx: FunctionContext) -> JsResult<JsArray> {
+fn fetch(mut cx: FunctionContext) -> JsResult<JsArray> {
     // Ok(cx.number(num_cpus::get() as f64))
 
 	let mut safe = Safe::new("base32z".to_string());
@@ -57,5 +57,5 @@ fn thread_count(mut cx: FunctionContext) -> JsResult<JsArray> {
 }
 
 register_module!(mut cx, {
-    cx.export_function("threadCount", thread_count)
+    cx.export_function("fetch", fetch)
 });
