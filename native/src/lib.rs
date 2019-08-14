@@ -1,17 +1,12 @@
 #[macro_use]
 extern crate neon;
-// extern crate num_cpus;
-extern crate safe_cli;
-
-use safe_cli::Safe;
-use safe_cli::SafeData;
 
 use neon::prelude::*;
-const APP_ID: &str = "net.maidsafe.neon";
+use safe_cli::{Safe, SafeData};
+
+const APP_ID: &str = "net.maidsafe.safe_nodejs";
 
 fn convert_vec_to_array(mut cx: FunctionContext, vec: Vec<u8>) -> JsResult<JsArray> {
-    // let vec: Vec<String> = Vec::with_capacity(100);
-
     // Create the JS array
     let js_array = JsArray::new(&mut cx, vec.len() as u32);
 
@@ -25,37 +20,35 @@ fn convert_vec_to_array(mut cx: FunctionContext, vec: Vec<u8>) -> JsResult<JsArr
 }
 
 fn fetch(mut cx: FunctionContext) -> JsResult<JsArray> {
-    // Ok(cx.number(num_cpus::get() as f64))
+    let mut safe = Safe::new("base32z");
+    let _ = safe.connect(APP_ID, None);
 
-	let mut safe = Safe::new("base32z".to_string());
-	safe.connect(APP_ID, None);
+    let url = cx.argument::<JsString>(0)?.value();
+    println!("Fetching from: {}", url);
+    let response = safe.fetch(&url).unwrap_or_else(|err| { panic!(format!("Failed to fetch content: {:?}", err)) } );
 
-	let response = safe.fetch("safe://kakkakakakakaka");
-
-	let typ = match response {
-		Ok(string ) => string,
-		Err(err) => panic!(format!("err in fetch: {:?}", err))
-	};
-
-	let data = match typ {
-		SafeData::PublishedImmutableData {
+    let data = match response {
+        SafeData::PublishedImmutableData {
             data,
-            xorname,
-            resolved_from,
+            xorname: _,
+            resolved_from: _,
         } => {
+            println!("Raw content of the file: {:?}", data);
+            convert_vec_to_array(cx, data)
+        }
+        other => {
+            println!("SafeData: {:?}", other);
+            panic!("Unexpected SafeData");
+        },
+    };
 
-                println!("Raw content of the file:");
-				let js_array = convert_vec_to_array(cx, data);
-
-				js_array
-            },
-		_ => panic!("upsssssssssssssssssssssss")
-	};
-
-	data
-	// Ok(data)
+    data
 }
 
-register_module!(mut cx, {
-    cx.export_function("fetch", fetch)
-});
+register_module!(mut cx, { cx.export_function("fetch", fetch) });
+
+// Temporary patch to have it work for electron v6
+#[no_mangle]
+pub extern "C" fn __cxa_pure_virtual() {
+    loop {}
+}

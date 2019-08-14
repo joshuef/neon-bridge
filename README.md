@@ -1,3 +1,3 @@
-# bridge
+# safe_nodejs
 
-Bridge to SAFE
+Bridge to SAFE client Rust APIs
