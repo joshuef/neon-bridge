@@ -16,12 +16,14 @@ neon-build = "0.2.0"
 
 [dependencies]
 safe_cli = { git = "https://github.com/maidsafe/safe-cli", branch = "master" }
-#neon = "0.2.0"
-neon = { git = "https://github.com/kjvalencik/neon", branch = "node12" }
+neon = "0.2.0"
+neon-serde = "0.1.1"
 
 [patch.crates-io]
 safe_app = { git = "https://github.com/maidsafe/safe_client_libs", branch = "stable" }
 safe_core = { git = "https://github.com/maidsafe/safe_client_libs", branch = "stable" }
+neon = { git = "https://github.com/kjvalencik/neon", branch = "node12" }
+neon-runtime = { git = "https://github.com/kjvalencik/neon", branch = "node12" }
 
 [features]
 mock-network = ["safe_cli/mock-network"]
