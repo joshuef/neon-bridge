@@ -1,61 +1,109 @@
 #[macro_use]
 extern crate neon;
-// extern crate num_cpus;
-extern crate safe_cli;
 
-use safe_cli::Safe;
-use safe_cli::SafeData;
+#[allow(unused_imports)]
+#[macro_use]
+extern crate neon_serde;
 
 use neon::prelude::*;
-const APP_ID: &str = "net.maidsafe.neon";
+use safe_cli::Safe;
 
-fn convert_vec_to_array(mut cx: FunctionContext, vec: Vec<u8>) -> JsResult<JsArray> {
-    // let vec: Vec<String> = Vec::with_capacity(100);
+// Temporary patch to have it work for electron v6
+#[no_mangle]
+pub extern "C" fn __cxa_pure_virtual() {
+    loop {}
+}
 
-    // Create the JS array
-    let js_array = JsArray::new(&mut cx, vec.len() as u32);
+declare_types! {
+    /// JS class wrapping Safe struct
+    pub class JsSafe for Safe {
+        init(mut cx) {
+            let xorurl_base = match cx.argument_opt(0) {
+                Some(arg) => arg.downcast::<JsString>().or_throw(&mut cx)?.value(),
+                None => "".to_string()
+            };
+            println!("Creating Safe API instance with xorurl base: '{}'", xorurl_base);
+            let safe = Safe::new(&xorurl_base);
 
-    // Iterate over the rust Vec and map each value in the Vec to the JS array
-    for (i, obj) in vec.iter().enumerate() {
-        let js_number = cx.number(*obj);
-        js_array.set(&mut cx, i as u32, js_number).unwrap();
+            Ok(safe)
+        }
+
+        method xorurl_base(mut cx) {
+            let base = {
+                let this = cx.this();
+                let guard = cx.lock();
+                let user = this.borrow(&guard);
+                user.xorurl_base.clone()
+            };
+            println!("{}", &base);
+            Ok(cx.string(&base).upcast())
+        }
+
+        // Generate an authorisation request string and send it to a SAFE Authenticator.
+        // Ir returns the credentials necessary to connect to the network, encoded in a single string.
+        // pub fn auth_app(&mut self, app_id: &str, app_name: &str, app_vendor: &str, port: Option<u16>) -> ResultReturn<String>
+        method auth_app(mut cx) {
+            let app_id = cx.argument::<JsString>(0)?.value();
+            let app_name = cx.argument::<JsString>(1)?.value();
+            let app_vendor = cx.argument::<JsString>(2)?.value();
+            let port = match cx.argument_opt(3) {
+                Some(arg) => Some(arg.downcast::<JsNumber>().or_throw(&mut cx)?.value() as u16),
+                None => None
+            };
+            let auth_credentials = {
+                let mut this = cx.this();
+                let guard = cx.lock();
+                let mut user = this.borrow_mut(&guard);
+                println!("Sending application authorisation request...");
+                user.auth_app(&app_id, &app_name, &app_vendor, port).unwrap_or_else(|err| { panic!(format!("Failed to authorise application: {:?}", err)) } )
+            };
+            println!("Application successfully authorised!");
+            Ok(cx.string(&auth_credentials).upcast())
+        }
+
+        // Connect to the SAFE Network using the provided app id and auth credentials
+        // pub fn connect(&mut self, app_id: &str, auth_credentials: Option<&str>) -> ResultReturn<()>
+        method connect(mut cx) {
+            let app_id = cx.argument::<JsString>(0)?.value();
+            #[allow(unused_assignments)]
+            let mut str = String::default();
+            let credentials = match cx.argument_opt(1) {
+                Some(arg) => {
+                    str = arg.downcast::<JsString>().or_throw(&mut cx)?.value();
+                    Some(str.as_str())
+                },
+                None => None
+            };
+
+            {
+                let mut this = cx.this();
+                let guard = cx.lock();
+                let mut user = this.borrow_mut(&guard);
+                let _ = user.connect(&app_id, credentials).unwrap_or_else(|err| { panic!(format!("Failed to connect: {:?}", err)) } );
+                println!("Successfully connected to the Network!");
+            }
+            Ok(cx.undefined().upcast())
+        }
+
+        // Retrieve data from a safe:// URL
+        // pub fn fetch(&self, url: &str) -> ResultReturn<SafeData>
+        method fetch(mut cx) {
+            let url = cx.argument::<JsString>(0)?.value();
+            println!("Fetching from: {}", url);
+            let data = {
+                let this = cx.this();
+                let guard = cx.lock();
+                let user = this.borrow(&guard);
+                user.fetch(&url).unwrap_or_else(|err| { panic!(format!("Failed to fetch content: {:?}", err)) } )
+            };
+
+            let js_value = neon_serde::to_value(&mut cx, &data)?;
+            Ok(js_value)
+        }
     }
-
-    Ok(js_array)
 }
 
-fn fetch(mut cx: FunctionContext) -> JsResult<JsArray> {
-    // Ok(cx.number(num_cpus::get() as f64))
-
-	let mut safe = Safe::new("base32z".to_string());
-	safe.connect(APP_ID, None);
-
-	let response = safe.fetch("safe://kakkakakakakaka");
-
-	let typ = match response {
-		Ok(string ) => string,
-		Err(err) => panic!(format!("err in fetch: {:?}", err))
-	};
-
-	let data = match typ {
-		SafeData::PublishedImmutableData {
-            data,
-            xorname,
-            resolved_from,
-        } => {
-
-                println!("Raw content of the file:");
-				let js_array = convert_vec_to_array(cx, data);
-
-				js_array
-            },
-		_ => panic!("upsssssssssssssssssssssss")
-	};
-
-	data
-	// Ok(data)
-}
-
-register_module!(mut cx, {
-    cx.export_function("fetch", fetch)
+register_module!(mut m, {
+    m.export_class::<JsSafe>("Safe")?;
+    Ok(())
 });
