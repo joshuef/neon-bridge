@@ -29,8 +29,3 @@ neon-runtime = { git = "https://github.com/kjvalencik/neon", branch = "node12" }
 mock-network = ["safe_cli/mock-network"]
 fake-auth = ["safe_cli/fake-auth"]
 scl-mock = ["safe_cli/scl-mock"]
-
-[dev-dependencies.safe_app]
-git = "https://github.com/maidsafe/safe_client_libs"
-rev = "f851b9ae"
-features = ["mock-network", "testing"]
