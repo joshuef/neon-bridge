@@ -1,5 +1,5 @@
 {
-  "name": "bridge",
+  "name": "safe_nodejs",
   "version": "0.1.0",
   "description": "Bridge to SAFE",
   "main": "lib/index.js",
