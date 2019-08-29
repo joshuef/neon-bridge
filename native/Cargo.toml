@@ -15,13 +15,13 @@ crate-type = ["cdylib"]
 neon-build = "0.2.0"
 
 [dependencies]
-safe_cli = { git = "https://github.com/maidsafe/safe-cli", branch = "master" }
+safe_cli = { git = "https://github.com/maidsafe/safe-cli" }
 neon = "0.2.0"
 neon-serde = "0.1.1"
 
 [patch.crates-io]
-safe_app = { git = "https://github.com/maidsafe/safe_client_libs", rev = "8f31a05e" }
-safe_core = { git = "https://github.com/maidsafe/safe_client_libs", rev = "8f31a05e" }
+safe_app = { git = "https://github.com/maidsafe/safe_client_libs" }
+safe_core = { git = "https://github.com/maidsafe/safe_client_libs" }
 neon = { git = "https://github.com/kjvalencik/neon", branch = "node12" }
 neon-runtime = { git = "https://github.com/kjvalencik/neon", branch = "node12" }
 
